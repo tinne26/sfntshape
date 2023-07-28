@@ -174,7 +174,7 @@ func (self *Shape) Rasterize() (*image.Alpha, error) {
 // fractional offset into an [*image.Alpha].
 func (self *Shape) RasterizeFract(offsetX, offsetY Fract) (*image.Alpha, error) {
 	segments := self.Segments()
-	if len(segments) == 0 { return nil }
+	if len(segments) == 0 { return nil, nil }
 	return Rasterize(segments, self.rasterizer, offsetX, offsetY)
 }
 
