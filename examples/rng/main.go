@@ -46,12 +46,18 @@ type Game struct {
 	originalImg *image.Alpha
 	symmetryImg *image.Alpha
 	ebiImg *ebiten.Image
+	needsRedraw bool
+	prevWidth, prevHeight int
 }
 
 func (self *Game) Layout(winWidth, winHeight int) (int, int) {
 	scale := ebiten.DeviceScaleFactor()
 	canvasWidth  := int(math.Ceil(float64(winWidth)*scale))
 	canvasHeight := int(math.Ceil(float64(winHeight)*scale))
+	if canvasWidth != self.prevWidth || canvasHeight != self.prevHeight {
+		self.prevWidth, self.prevHeight = canvasWidth, canvasHeight
+		self.needsRedraw = true
+	}
 	return canvasWidth, canvasHeight
 }
 
@@ -61,6 +67,7 @@ func (self *Game) Update() error {
 		isPressed  := ebiten.IsKeyPressed(key)
 		self.keyPressed[key] = isPressed
 		if !wasPressed && isPressed {
+			self.needsRedraw = true
 			switch key {
 			case ebiten.KeyH:
 				self.hideShortcuts = !self.hideShortcuts
@@ -95,6 +102,7 @@ func (self *Game) Update() error {
 				self.refreshSymmetry()
 			case ebiten.KeyE:
 				if runtime.GOOS == "js" { return nil } // disable export for wasm/js
+
 				// export image
 				file, err := os.Create("rng_shape.png")
 				if err != nil { return err }
@@ -209,6 +217,10 @@ func (self *Game) refreshSymmetry() {
 }
 
 func (self *Game) Draw(screen *ebiten.Image) {
+	if !self.needsRedraw { return } // rendering optimization
+	self.needsRedraw = false
+	screen.Clear()
+
 	sw, sh := screen.Size()
 	iw, ih := self.ebiImg.Size()
 	tx := (sw - iw)/2
@@ -238,8 +250,10 @@ func (self *Game) Draw(screen *ebiten.Image) {
 func main() {
 	fmt.Print("Instructions can be hidden with [H]\n")
 	fmt.Print("Fullscreen can be switched with [F]\n")
+
 	ebiten.SetWindowTitle("sfntshapes/examples/rng")
 	ebiten.SetWindowResizable(true)
+	ebiten.SetScreenClearedEveryFrame(false)
 	ebiten.SetWindowSize(640, 480)
 	game := &Game{
 		keyPressed: make(map[ebiten.Key]bool),
