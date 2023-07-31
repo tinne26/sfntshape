@@ -37,6 +37,7 @@ type Fract = fixed.Int26_6
 type Shape struct {
 	rasterizer *vector.Rasterizer
 	segments []sfnt.Segment
+	scale Fract
 	invertY bool // but rasterizers already invert coords, so this is negated
 }
 
@@ -46,7 +47,26 @@ func New() Shape {
 		rasterizer: vector.NewRasterizer(0, 0),
 		segments: make([]sfnt.Segment, 0, 8),
 		invertY: false,
+		scale: 64,
 	}
+}
+
+// Returns the current scaling factor.
+func (self *Shape) GetScale() Fract {
+	return self.scale
+}
+
+// Sets a scaling factor to be applied to the coordinates of
+// subsequent [Shape.MoveTo](), [Shape.LineTo]() and similar
+// commands.
+func (self *Shape) SetScale(scale float64) {
+	self.SetScaleFract(fixedFromFloat64(scale))
+}
+
+// Like [Shape.SetScale](), but expecting a Fract value
+// instead of a float64.
+func (self *Shape) SetScaleFract(scale Fract) {
+	self.scale = scale
 }
 
 // Returns whether [Shape.InvertY] is active or inactive.
@@ -82,6 +102,10 @@ func (self *Shape) MoveTo(x, y int) {
 // Like [Shape.MoveTo], but with fractional coordinates.
 func (self *Shape) MoveToFract(x, y Fract) {
 	if !self.invertY { y = -y }
+	if self.scale != 64 {
+		x = x.Mul(self.scale)
+		y = y.Mul(self.scale)
+	}
 	self.segments = append(self.segments,
 		sfnt.Segment {
 			Op: sfnt.SegmentOpMoveTo,
@@ -102,6 +126,10 @@ func (self *Shape) LineTo(x, y int) {
 // Like [Shape.LineTo], but with fractional coordinates.
 func (self *Shape) LineToFract(x, y Fract) {
 	if !self.invertY { y = -y }
+	if self.scale != 64 {
+		x = x.Mul(self.scale)
+		y = y.Mul(self.scale)
+	}
 	self.segments = append(self.segments,
 		sfnt.Segment {
 			Op: sfnt.SegmentOpLineTo,
@@ -125,6 +153,12 @@ func (self *Shape) QuadTo(ctrlX, ctrlY, x, y int) {
 // Like [Shape.QuadTo], but with fractional coordinates.
 func (self *Shape) QuadToFract(ctrlX, ctrlY, x, y Fract) {
 	if !self.invertY { ctrlY, y = -ctrlY, -y }
+	if self.scale != 64 {
+		ctrlX = ctrlX.Mul(self.scale)
+		ctrlY = ctrlY.Mul(self.scale)
+		x = x.Mul(self.scale)
+		y = y.Mul(self.scale)
+	}
 	self.segments = append(self.segments,
 		sfnt.Segment {
 			Op: sfnt.SegmentOpQuadTo,
@@ -150,6 +184,14 @@ func (self *Shape) CubeTo(cx1, cy1, cx2, cy2, x, y int) {
 // Like [Shape.CubeTo], but with fractional coordinates.
 func (self *Shape) CubeToFract(cx1, cy1, cx2, cy2, x, y Fract) {
 	if !self.invertY { cy1, cy2, y = -cy1, -cy2, -y }
+	if self.scale != 64 {
+		cx1 = cx1.Mul(self.scale)
+		cx2 = cx2.Mul(self.scale)
+		cy1 = cy1.Mul(self.scale)
+		cy2 = cy2.Mul(self.scale)
+		x = x.Mul(self.scale)
+		y = y.Mul(self.scale)
+	}
 	self.segments = append(self.segments,
 		sfnt.Segment {
 			Op: sfnt.SegmentOpCubeTo,
