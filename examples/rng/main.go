@@ -47,13 +47,14 @@ type Game struct {
 	symmetryImg *image.Alpha
 	ebiImg *ebiten.Image
 	needsRedraw bool
-	prevWidth, prevHeight int
+	prevWidth, prevHeight float64
 }
 
-func (self *Game) Layout(winWidth, winHeight int) (int, int) {
+func (self *Game) Layout(winWidth, winHeight int) (int, int) { panic("use ebitengine >=v2.5.0") }
+func (self *Game) LayoutF(logicWinWidth, logicWinHeight float64) (float64, float64) {
 	scale := ebiten.DeviceScaleFactor()
-	canvasWidth  := int(math.Ceil(float64(winWidth)*scale))
-	canvasHeight := int(math.Ceil(float64(winHeight)*scale))
+	canvasWidth  := math.Ceil(logicWinWidth*scale)
+	canvasHeight := math.Ceil(logicWinHeight*scale)
 	if canvasWidth != self.prevWidth || canvasHeight != self.prevHeight {
 		self.prevWidth, self.prevHeight = canvasWidth, canvasHeight
 		self.needsRedraw = true
