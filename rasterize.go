@@ -1,17 +1,21 @@
 package sfntshape
 
-import "image"
-import "image/draw"
+import (
+	"image"
+	"image/draw"
 
-import "golang.org/x/image/font/sfnt"
-import "golang.org/x/image/math/fixed"
-import "golang.org/x/image/vector"
+	"golang.org/x/image/font/sfnt"
+	"golang.org/x/image/math/fixed"
+	"golang.org/x/image/vector"
+)
 
 // Rasterize an outline into a single-channel image.
 func Rasterize(outline sfnt.Segments, rasterizer *vector.Rasterizer, originX, originY Fract) (*image.Alpha, error) {
 	// return nil if the outline don't include lines or curves
 	for _, segment := range outline {
-		if segment.Op == sfnt.SegmentOpMoveTo { continue }
+		if segment.Op == sfnt.SegmentOpMoveTo {
+			continue
+		}
 		return etxtLikeRasterize(outline, rasterizer, originX, originY)
 	}
 	return nil, nil // nothing to draw
@@ -44,7 +48,7 @@ func etxtLikeRasterize(outline sfnt.Segments, rasterizer *vector.Rasterizer, ori
 }
 
 // (copied/adapted from etxt v0.0.9 mask/helper_funcs.go)
-// 
+//
 // Given the glyph bounds and an origin position indicating the subpixel
 // positioning (only lowest bits will be taken into account), it returns
 // the bounding integer width and heights, the normalization offset to be
@@ -60,33 +64,34 @@ func figureOutBounds(bounds fixed.Rectangle26_6, originX, originY Fract) (int, i
 
 	normOffsetX := -floorMinX + fixedFract(originX)
 	normOffsetY := -floorMinY + fixedFract(originY)
-	width  := (bounds.Max.X + normOffsetX).Ceil()
+	width := (bounds.Max.X + normOffsetX).Ceil()
 	height := (bounds.Max.Y + normOffsetY).Ceil()
 	return width, height, normOffsetX, normOffsetY, maskCorrection
 }
 
 // (copied/adapted from etxt v0.0.9 mask/rasterizer.go)
 func processOutline(rasterizer *vector.Rasterizer, outline sfnt.Segments, offsetX, offsetY fixed.Int26_6) {
+	rasterizer.MoveTo(fixedToF32(offsetX), fixedToF32(offsetY))
 	for _, segment := range outline {
 		switch segment.Op {
 		case sfnt.SegmentOpMoveTo:
 			rasterizer.MoveTo(
-				fixedToF32(segment.Args[0].X + offsetX), fixedToF32(segment.Args[0].Y + offsetY),
+				fixedToF32(segment.Args[0].X+offsetX), fixedToF32(segment.Args[0].Y+offsetY),
 			)
 		case sfnt.SegmentOpLineTo:
 			rasterizer.LineTo(
-				fixedToF32(segment.Args[0].X + offsetX), fixedToF32(segment.Args[0].Y + offsetY),
+				fixedToF32(segment.Args[0].X+offsetX), fixedToF32(segment.Args[0].Y+offsetY),
 			)
 		case sfnt.SegmentOpQuadTo:
 			rasterizer.QuadTo(
-				fixedToF32(segment.Args[0].X + offsetX), fixedToF32(segment.Args[0].Y + offsetY),
-				fixedToF32(segment.Args[1].X + offsetX), fixedToF32(segment.Args[1].Y + offsetY),
+				fixedToF32(segment.Args[0].X+offsetX), fixedToF32(segment.Args[0].Y+offsetY),
+				fixedToF32(segment.Args[1].X+offsetX), fixedToF32(segment.Args[1].Y+offsetY),
 			)
 		case sfnt.SegmentOpCubeTo:
 			rasterizer.CubeTo(
-				fixedToF32(segment.Args[0].X + offsetX), fixedToF32(segment.Args[0].Y + offsetY),
-				fixedToF32(segment.Args[1].X + offsetX), fixedToF32(segment.Args[1].Y + offsetY),
-				fixedToF32(segment.Args[2].X + offsetX), fixedToF32(segment.Args[2].Y + offsetY),
+				fixedToF32(segment.Args[0].X+offsetX), fixedToF32(segment.Args[0].Y+offsetY),
+				fixedToF32(segment.Args[1].X+offsetX), fixedToF32(segment.Args[1].Y+offsetY),
+				fixedToF32(segment.Args[2].X+offsetX), fixedToF32(segment.Args[2].Y+offsetY),
 			)
 		default:
 			panic("unexpected segment.Op case")
