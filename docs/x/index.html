@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sfntshape / explore</title>
+<style>
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #080808; }
+canvas { display: block; }
+#error { color: white; font: 16px monospace; white-space: pre-wrap; padding: 16px; }
+</style>
+<script src="wasm_exec.js"></script>
+<script>
+(async () => {
+  try {
+    const go = new Go();
+    const response = await fetch("explore.wasm", {cache: "no-store"});
+    if (!response.ok) throw new Error(`WASM request failed: ${response.status}`);
+    const {instance} = await WebAssembly.instantiate(await response.arrayBuffer(), go.importObject);
+    await go.run(instance);
+  } catch (error) {
+    console.error(error);
+    const message = document.createElement("pre");
+    message.id = "error";
+    message.textContent = String(error);
+    document.body.appendChild(message);
+  }
+})();
+</script>
+</html>
